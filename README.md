@@ -153,3 +153,8 @@ console.log(data.proxy_url); // Use this for download/playback
 | 403 Forbidden | Terabox may block non-browser User-Agents — try updating `User-Agent` |
 
 ---
+
+**✨ Developed with ❤️ by [BIZ FACTORY](https://t.me/bizft)**  
+*Your go-to source for smart tools, automation scripts, and cloud-native solutions.*  
+
+🔔 *Stay updated — Join our Telegram channel for the latest releases, tips, and exclusive utilities!*  
