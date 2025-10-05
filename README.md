@@ -23,7 +23,7 @@ A lightweight Cloudflare Worker that extracts direct download links from Terabox
 
 1. Log in to [Terabox](https://www.terabox.com) in your browser.
 2. Open DevTools (`F12`) → **Application** → **Cookies** → `https://www.terabox.com`.
-3. Copy the full **Cookie** string (contains `BDUSS`, `STOKEN`, etc.).
+3. Copy the full **Cookie** string (contains `Nus=` etc.).
 4. **⚠️ Keep this private! Never commit it to public repos.**
 
 ### 2. **Deploy to Cloudflare Workers**
