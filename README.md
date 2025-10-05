@@ -38,10 +38,10 @@ A lightweight Cloudflare Worker that extracts direct download links from Terabox
 2. Clone or create a new Worker project:
    ```bash
    wrangler init terabox-downloader
-   cd terabox-downloader
+   cd Terabox-Downloader-API-bizft
    ```
 
-3. Replace `src/index.js` with the provided code.
+3. Replace `src/worker.js` with the provided code.
 
 4. Set your cookie as a **secret** (never hardcode it!):
    ```bash
