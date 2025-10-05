@@ -4,7 +4,7 @@
 A lightweight Cloudflare Worker that extracts direct download links from Terabox (formerly Dubox) shared URLs and serves them via a proxy endpoint for seamless playback or download.
 
 **Made By [BIZ FACTORY](https://t.me/bizft)** 🚀
-```
+
 ---
 
 ## 🚀 Features
