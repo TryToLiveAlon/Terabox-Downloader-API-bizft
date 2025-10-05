@@ -1,0 +1,11 @@
+name = "Terabox-Downloader-API-bizft"
+main = "src/worker.js"
+compatibility_date = "2025-04-01"
+compatibility_flags = []
+
+# Automatically inject environment variables and secrets
+[vars]
+# (No vars needed — we use secrets for the cookie)
+
+# Secrets (like TERABOX_COOKIE) are set via `wrangler secret put`
+# They are not defined in this file for security.
