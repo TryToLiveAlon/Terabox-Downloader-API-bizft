@@ -41,41 +41,70 @@ function getSize(sizeBytes) {
   return `${sizeBytes} bytes`;
 }
 
-function findBetween(str, start, end) {
-  const startIndex = str.indexOf(start) + start.length;
-  const endIndex = str.indexOf(end, startIndex);
-  if (startIndex === -1 || endIndex === -1) return "";
-  return str.slice(startIndex, endIndex);
-}
-
 async function getFileInfo(link, request) {
+  let debug = {
+    input_link: link,
+    final_url: null,
+    surl: null,
+    jsToken: null,
+    logid: null,
+    bdstoken: null,
+    step: "init",
+  };
+
   try {
     if (!link) {
-      return { error: "Link cannot be empty." };
+      return { error: "Link cannot be empty.", debug };
     }
 
+    debug.step = "fetch_initial";
+
     let response = await fetch(link, { headers: HEADERS });
+
     if (!response.ok) {
-      return { error: `Failed to fetch the initial link. Status code: ${response.status}` };
+      return {
+        error: `Failed initial fetch: ${response.status}`,
+        debug
+      };
     }
 
     const finalUrl = response.url;
+    debug.final_url = finalUrl;
+
     const url = new URL(finalUrl);
     const surl = url.searchParams.get("surl");
+    debug.surl = surl;
+
     if (!surl) {
-      return { error: "Invalid link. Please check the link." };
+      return {
+        error: "Invalid link (no surl found)",
+        debug
+      };
     }
+
+    debug.step = "fetch_page_html";
 
     response = await fetch(finalUrl, { headers: HEADERS });
     const text = await response.text();
+
+    debug.step = "extract_tokens";
 
     const jsToken = findBetween(text, 'fn%28%22', '%22%29');
     const logid = findBetween(text, 'dp-logid=', '&');
     const bdstoken = findBetween(text, 'bdstoken":"', '"');
 
+    debug.jsToken = jsToken;
+    debug.logid = logid;
+    debug.bdstoken = bdstoken;
+
     if (!jsToken || !logid || !bdstoken) {
-      return { error: "Failed to extract required tokens." };
+      return {
+        error: "Token extraction failed",
+        debug
+      };
     }
+
+    debug.step = "call_api";
 
     const params = new URLSearchParams({
       app_id: "250528",
@@ -96,11 +125,20 @@ async function getFileInfo(link, request) {
     response = await fetch(`https://www.terabox.com/share/list?${params}`, { headers: HEADERS });
     const data = await response.json();
 
+    debug.step = "api_response";
+
     if (!data || !data.list || !data.list.length || data.errno) {
-      return { error: data.errmsg || "Failed to retrieve file list." };
+      return {
+        error: data?.errmsg || "Failed to retrieve file list",
+        debug,
+        raw: data
+      };
     }
 
     const fileInfo = data.list[0];
+
+    debug.step = "success";
+
     return {
       file_name: fileInfo.server_filename || "",
       download_link: fileInfo.dlink || "",
@@ -108,11 +146,16 @@ async function getFileInfo(link, request) {
       file_size: getSize(parseInt(fileInfo.size || 0)),
       size_bytes: parseInt(fileInfo.size || 0),
       proxy_url: `https://${new URL(request.url).host}/proxy?url=${encodeURIComponent(fileInfo.dlink)}&file_name=${encodeURIComponent(fileInfo.server_filename || 'download')}`,
+      debug
     };
+
   } catch (error) {
-    return { error: `An error occurred: ${error.message}` };
+    return {
+      error: `Exception: ${error.message}`,
+      debug
+    };
   }
-}
+  }
 
 async function proxyDownload(url, fileName, request) {
   try {
