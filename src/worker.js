@@ -53,6 +53,34 @@ function findBetween(str, start, end) {
   return str.slice(from, endIndex);
 }
 
+async function fetchFileList(shorturl, jsToken = "", referer = "") {
+  const params = new URLSearchParams({
+    app_id: "250528",
+    web: "1",
+    channel: "dubox",
+    clienttype: "0",
+    jsToken: jsToken || "",
+    page: "1",
+    num: "20",
+    by: "name",
+    order: "asc",
+    shorturl: shorturl,
+    root: "1",
+  });
+
+  // Add referer only if available
+  if (referer) {
+    params.append("site_referer", referer);
+  }
+
+  const res = await fetch(`https://www.terabox.com/share/list?${params}`, {
+    headers: HEADERS
+  });
+
+  const data = await res.json();
+  return data;
+}
+
 async function getFileInfo(link, request) {
   let debug = {
     input_link: link,
@@ -138,34 +166,22 @@ debug.bdstoken = bdstoken;
 
     debug.step = "call_api";
 
-    const params = new URLSearchParams({
-      app_id: "250528",
-      web: "1",
-      channel: "dubox",
-      clienttype: "0",
-      jsToken: jsToken,
-      "dp-logid": logid,
-      page: "1",
-      num: "20",
-      by: "name",
-      order: "asc",
-      site_referer: finalUrl,
-      shorturl: surl,
-      root: "1,",
-    });
+// Try with jsToken first
+let data = await fetchFileList(surl, jsToken, finalUrl);
 
-    response = await fetch(`https://www.terabox.com/share/list?${params}`, { headers: HEADERS });
-    const data = await response.json();
+    if (!data?.list?.length) {
+  debug.step = "fallback_no_token";
+  data = await fetchFileList(surl);
+}
 
-    debug.step = "api_response";
-
-    if (!data || !data.list || !data.list.length || data.errno) {
-      return {
-        error: data?.errmsg || "Failed to retrieve file list",
-        debug,
-        raw: data
-      };
-    }
+// Still failed
+if (!data || !data.list || !data.list.length || data.errno) {
+  return {
+    error: data?.errmsg || "Failed to retrieve file list",
+    debug,
+    raw: data
+  };
+}
 
     const fileInfo = data.list[0];
 
