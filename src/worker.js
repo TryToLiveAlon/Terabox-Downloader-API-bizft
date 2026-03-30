@@ -101,13 +101,33 @@ async function getFileInfo(link, request) {
 
     debug.step = "extract_tokens";
 
-    const jsToken = findBetween(text, 'fn%28%22', '%22%29');
-    const logid = findBetween(text, 'dp-logid=', '&');
-    const bdstoken = findBetween(text, 'bdstoken":"', '"');
+    // Try original extraction
+let jsToken = findBetween(text, 'fn%28%22', '%22%29');
+let logid = findBetween(text, 'dp-logid=', '&');
+let bdstoken = findBetween(text, 'bdstoken":"', '"');
 
-    debug.jsToken = jsToken;
-    debug.logid = logid;
-    debug.bdstoken = bdstoken;
+// 🔥 Fallback 1: Regex extraction (NEW)
+if (!jsToken) {
+  const match = text.match(/"jsToken"\s*:\s*"([^"]+)"/);
+  if (match) jsToken = match[1];
+}
+
+// 🔥 Fallback 2: Another pattern
+if (!jsToken) {
+  const match = text.match(/fn\("([^"]+)"\)/);
+  if (match) jsToken = match[1];
+}
+
+// 🔥 Fallback 3: logid alternative
+if (!logid) {
+  const match = text.match(/dp-logid=([0-9]+)/);
+  if (match) logid = match[1];
+}
+
+// Save debug
+debug.jsToken = jsToken;
+debug.logid = logid;
+debug.bdstoken = bdstoken;
 
     if (!jsToken || !logid || !bdstoken) {
       return {
