@@ -41,6 +41,18 @@ function getSize(sizeBytes) {
   return `${sizeBytes} bytes`;
 }
 
+function findBetween(str, start, end) {
+  const startIndex = str.indexOf(start);
+  if (startIndex === -1) return "";
+
+  const from = startIndex + start.length;
+  const endIndex = str.indexOf(end, from);
+
+  if (endIndex === -1) return "";
+
+  return str.slice(from, endIndex);
+}
+
 async function getFileInfo(link, request) {
   let debug = {
     input_link: link,
