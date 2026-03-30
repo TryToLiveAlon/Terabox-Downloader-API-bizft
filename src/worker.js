@@ -51,35 +51,7 @@ function findBetween(str, start, end) {
   if (endIndex === -1) return "";
 
   return str.slice(from, endIndex);
-}
-
-async function fetchFileList(shorturl, jsToken = "", referer = "") {
-  const params = new URLSearchParams({
-    app_id: "250528",
-    web: "1",
-    channel: "dubox",
-    clienttype: "0",
-    jsToken: jsToken || "",
-    page: "1",
-    num: "20",
-    by: "name",
-    order: "asc",
-    shorturl: shorturl,
-    root: "1",
-  });
-
-  // Add referer only if available
-  if (referer) {
-    params.append("site_referer", referer);
-  }
-
-  const res = await fetch(`https://www.terabox.com/share/list?${params}`, {
-    headers: HEADERS
-  });
-
-  const data = await res.json();
-  return data;
-}
+}    
 
 async function getFileInfo(link, request) {
   let debug = {
@@ -129,71 +101,90 @@ async function getFileInfo(link, request) {
 
     debug.step = "extract_tokens";
 
-    // Try original extraction
-let jsToken = findBetween(text, 'fn%28%22', '%22%29');
-let logid = findBetween(text, 'dp-logid=', '&');
-let bdstoken = findBetween(text, 'bdstoken":"', '"');
+    // --- Token Extraction ---
+    let jsToken = findBetween(text, 'fn%28%22', '%22%29');
+    let logid = findBetween(text, 'dp-logid=', '&');
+    let bdstoken = findBetween(text, 'bdstoken":"', '"');
 
-// 🔥 Fallback 1: Regex extraction (NEW)
-if (!jsToken) {
-  const match = text.match(/"jsToken"\s*:\s*"([^"]+)"/);
-  if (match) jsToken = match[1];
-}
+    if (!jsToken) {
+      const match = text.match(/"jsToken"\s*:\s*"([^"]+)"/);
+      if (match) jsToken = match[1];
+    }
 
-// 🔥 Fallback 2: Another pattern
-if (!jsToken) {
-  const match = text.match(/fn\("([^"]+)"\)/);
-  if (match) jsToken = match[1];
-}
+    if (!jsToken) {
+      const match = text.match(/fn\("([^"]+)"\)/);
+      if (match) jsToken = match[1];
+    }
 
-// 🔥 Fallback 3: logid alternative
-if (!logid) {
-  const match = text.match(/dp-logid=([0-9]+)/);
-  if (match) logid = match[1];
-}
+    if (!logid) {
+      const match = text.match(/dp-logid=([0-9]+)/);
+      if (match) logid = match[1];
+    }
 
-// Save debug
-debug.jsToken = jsToken;
-debug.logid = logid;
-debug.bdstoken = bdstoken;
+    debug.jsToken = jsToken;
+    debug.logid = logid;
+    debug.bdstoken = bdstoken;
 
-    if (!jsToken || !logid || !bdstoken) {
+    // --- Fetch File List ---
+    debug.step = "call_api";
+
+    let data = await fetchFileList(surl, jsToken, finalUrl);
+
+    // fallback (like browser behavior)
+    if (!data?.list?.length) {
+      debug.step = "fallback_no_token";
+      data = await fetchFileList(surl);
+    }
+
+    if (!data || !data.list || !data.list.length || data.errno) {
       return {
-        error: "Token extraction failed",
-        debug
+        error: data?.errmsg || "Failed to retrieve file list",
+        debug,
+        raw: data
       };
     }
 
-    debug.step = "call_api";
-
-// Try with jsToken first
-let data = await fetchFileList(surl, jsToken, finalUrl);
-
-    if (!data?.list?.length) {
-  debug.step = "fallback_no_token";
-  data = await fetchFileList(surl);
-}
-
-// Still failed
-if (!data || !data.list || !data.list.length || data.errno) {
-  return {
-    error: data?.errmsg || "Failed to retrieve file list",
-    debug,
-    raw: data
-  };
-}
-
     const fileInfo = data.list[0];
+
+    // 🔥 Save full structure for debugging
+    debug.full_list_item = fileInfo;
+
+    // --- SMART DLINK EXTRACTION ---
+    let dlink = "";
+
+    // Case 1: direct string
+    if (typeof fileInfo.dlink === "string" && fileInfo.dlink) {
+      dlink = fileInfo.dlink;
+    }
+
+    // Case 2: array format
+    else if (Array.isArray(fileInfo.dlink) && fileInfo.dlink.length > 0) {
+      dlink = fileInfo.dlink[0]?.dlink || "";
+    }
+
+    // Case 3: inside extra
+    else if (fileInfo.extra?.dlink) {
+      dlink = fileInfo.extra.dlink;
+    }
+
+    // Case 4: fallback deep
+    else if (data?.list?.[0]?.dlink) {
+      dlink = data.list[0].dlink;
+    }
+
+    debug.extracted_dlink = dlink;
 
     debug.step = "success";
 
     return {
       file_name: fileInfo.server_filename || "",
-      download_link: fileInfo.dlink || "",
+      download_link: dlink || "",
       thumbnail: fileInfo.thumbs?.url3 || "",
       file_size: getSize(parseInt(fileInfo.size || 0)),
       size_bytes: parseInt(fileInfo.size || 0),
-      proxy_url: `https://${new URL(request.url).host}/proxy?url=${encodeURIComponent(fileInfo.dlink)}&file_name=${encodeURIComponent(fileInfo.server_filename || 'download')}`,
+      proxy_url: dlink
+        ? `https://${new URL(request.url).host}/proxy?url=${encodeURIComponent(dlink)}&file_name=${encodeURIComponent(fileInfo.server_filename || 'download')}`
+        : null,
       debug
     };
 
@@ -203,7 +194,7 @@ if (!data || !data.list || !data.list.length || data.errno) {
       debug
     };
   }
-  }
+                              }
 
 async function proxyDownload(url, fileName, request) {
   try {
