@@ -53,6 +53,36 @@ function findBetween(str, start, end) {
   return str.slice(from, endIndex);
 }    
 
+async function fetchFileList(shorturl, jsToken, logid) {
+  const params = new URLSearchParams({
+    app_id: "250528",
+    web: "1",
+    channel: "dubox",
+    clienttype: "0",
+    jsToken: jsToken,
+    "dp-logid": logid,
+    page: "1",
+    num: "20",
+    by: "name",
+    order: "asc",
+    site_referer: "",
+    shorturl: shorturl,
+    root: "1",
+  });
+
+  const res = await fetch(`https://dm.terabox.app/share/list?${params}`, {
+    method: "GET",
+    headers: {
+      ...HEADERS,
+      "Host": "dm.terabox.app",
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  });
+
+  return await res.json();
+}
+
 async function getFileInfo(link, request) {
   let debug = {
     input_link: link,
