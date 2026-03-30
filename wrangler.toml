@@ -1,4 +1,4 @@
-name = "Terabox-Downloader-API-bizft"
+name = "terabox-downloader-api-bizft"
 main = "src/worker.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = []
