@@ -1,4 +1,4 @@
-const COOKIE = "YT0hxdPpeHuiPK4AVA2qdVFp4xqnmjp-m00o3GfU" // Replace with your actual cookie
+const COOKIE = "ndus=YT0hxdPpeHuiPK4AVA2qdVFp4xqnmjp-m00o3GfU;" // Replace with your actual cookie
 
 const HEADERS = {
   "Accept": "application/json, text/plain, */*",
