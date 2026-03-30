@@ -21,12 +21,18 @@ const HEADERS = {
 
 const DM_HEADERS = {
   "Accept": "application/json, text/plain, */*",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Connection": "keep-alive",
   "Content-Type": "application/x-www-form-urlencoded",
-  "X-Requested-With": "XMLHttpRequest",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36",
-  "Referer": "https://www.terabox.com/",
-  "Origin": "https://www.terabox.com",
-  "Cookie": COOKIE
+  "Host": "dm.terabox.app",
+  "Origin": "https://terabox.app",
+  "Referer": "https://terabox.app/",
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-site",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  "X-Requested-With": "XMLHttpRequest"
 };
 
 function getSize(sizeBytes) {
